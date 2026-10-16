@@ -1,0 +1,20 @@
+{
+    "name": "pomido",
+    "displayName": "Pomido",
+    "version": "1.0.4",
+    "description": "Research Lithuanian law and legally governed financial questions using official source documents.",
+    "author": {
+        "name": "Titas dev, MB",
+        "url": "https://pomido.lt/"
+    },
+    "homepage": "https://pomido.lt/",
+    "repository": "https://github.com/pomido-lt/pomido-plugin",
+    "license": "MIT",
+    "keywords": ["lithuania", "law", "legal-research", "tax", "finance"],
+    "mcpServers": {
+        "pomido": {
+            "type": "http",
+            "url": "https://pomido.lt/mcp"
+        }
+    }
+}

@@ -1,0 +1,93 @@
+{
+    "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+    "name": "pomido",
+    "version": "1.0.4",
+    "description": "Research Lithuanian law and legally governed financial questions using official source documents.",
+    "extensions": {
+        "com.openai": {
+            "interface": {
+                "displayName": "Pomido",
+                "shortDescription": "Research Lithuanian law",
+                "longDescription": "Less searching. More knowing. Pomido helps you explore Lithuanian law and finance right inside ChatGPT.\n\nAsk about annual leave, consumer rights, taxes, or other questions governed by Lithuanian law. Your AI can find relevant official documents, explain the rules, and give you source links to check. Research today’s rules or explore the wording that applied on a past date, in Lithuanian or English.\n\nUse Pomido alongside other authoritative sources to build a clearer picture. Connect your Pomido account to get started.\n\nPomido provides research information, not legal or financial advice.",
+                "developerName": "Titas dev, MB",
+                "category": "Education & Research",
+                "capabilities": ["Search legal documents", "Read source passages", "Inspect document versions"],
+                "websiteURL": "https://pomido.lt/",
+                "supportURL": "https://pomido.lt/",
+                "privacyPolicyURL": "https://pomido.lt/privatumo-politika",
+                "termsOfServiceURL": "https://pomido.lt/naudojimo-salygos",
+                "defaultPrompt": [
+                    "Kiek kasmetinių atostogų priklauso dirbant penkias dienas per savaitę Lietuvoje?",
+                    "Rask Lietuvos taisykles, kaip atsisakyti internetu pirktos prekės, ir nurodyk šaltinius.",
+                    "Parodyk Lietuvos kasmetinių atostogų taisykles, galiojusias 2024 m. liepos 1 d."
+                ],
+                "brandColor": "#183D32",
+                "brandColorDark": "#F5F3EC",
+                "composerIcon": "./assets/logo.svg",
+                "composerIconDark": "./assets/logo-dark.svg",
+                "logo": "./assets/logo.svg",
+                "logoDark": "./assets/logo-dark.svg"
+            },
+            "review": {
+                "test_cases": {
+                    "positive": [
+                        {
+                            "description": "Research annual leave in Lithuanian using current consolidated source text.",
+                            "prompt": "Lietuvoje dirbu penkias dienas per savaitę. Rask šiuo metu galiojančią bendrą kasmetinių atostogų taisyklę ir pateik šaltinį.",
+                            "tools_triggered": "search-documents; get-document when version inspection is needed; read-document-content when more context is needed",
+                            "expected_behavior": "Search Lithuanian terms with effective_on set to today's date and prefer consolidated text. Inspect the returned passage, effective dates, and document status; answer directly when they suffice. Use get-document only when other versions or readability details are needed. Summarize the general rule, distinguish exceptions when supported, and cite source_url. Verify important claims against authoritative sources when browsing is available. Do not treat corpus coverage as exhaustive or recorded effective dates as synchronization dates."
+                        },
+                        {
+                            "description": "Research Lithuanian consumer law from a Lithuanian prompt.",
+                            "prompt": "Kaip atsisakyti internetu pirktos prekės pagal Civilinį kodeksą? Nurodyk šaltinį.",
+                            "tools_triggered": "search-documents; get-document when version inspection is needed; read-document-content when the matched passage is incomplete",
+                            "expected_behavior": "Search using useful Lithuanian terms with effective_on set to today's date and prefer consolidated text. Inspect returned Civil Code passages and dates before explaining the withdrawal rule and any relevant exceptions. Answer directly when the evidence suffices. A passage merely referring to the provision is insufficient: search again or read the needed context directly using the result's document_content_id and chunk_id as start_chunk_id. Cite source_url and acknowledge missing evidence rather than guessing."
+                        },
+                        {
+                            "description": "Use a historical consolidated version for an explicit past date.",
+                            "prompt": "Rask Lietuvos darbo kodekso 126 straipsnio kasmetinių atostogų taisyklę, galiojusią 2024 m. liepos 1 d. Pateik būtent tos redakcijos nuorodą.",
+                            "tools_triggered": "search-documents; get-document when version inspection is needed; read-document-content when more context is needed",
+                            "expected_behavior": "Search with effective_on=2024-07-01 and content_type=consolidated. Inspect the returned text and confirm its dates cover that day. Answer directly when the evidence suffices; use get-document only when other versions or readability details are needed. Cite version_url for the historical version and explicitly state the as-of date. If the applicable text or version link is missing, explain the gap and use other authoritative sources when available. Do not substitute a current version for missing historical evidence or invent citations."
+                        },
+                        {
+                            "description": "Read and continue consecutive passages within one content version.",
+                            "prompt": "Rask Lietuvos darbo kodekso 126 straipsnį. Parodyk du nuoseklius teksto fragmentus nuo rastos vietos, tada perskaityk dar du kitus fragmentus iš tos pačios redakcijos.",
+                            "tools_triggered": "search-documents, read-document-content; get-document only when version inspection is needed",
+                            "expected_behavior": "Use the search result's document_content_id and chunk_id as start_chunk_id for read-document-content with limit=2, without requiring get-document first. Continue with the returned next_chunk_id and the same document_content_id. Return ordered, nonduplicated passages and cite the read response's source_url. If next_chunk_id is null, report the end instead of inventing further passages."
+                        },
+                        {
+                            "description": "Apply a Lithuanian tax exemption with conditions to a personal financial situation.",
+                            "prompt": "Pardaviau butą, kuriame dvejus metus buvo deklaruota mano gyvenamoji vieta. Ar turiu mokėti gyventojų pajamų mokestį?",
+                            "tools_triggered": "search-documents; get-document when version inspection is needed; read-document-content when the exemption conditions continue in later passages",
+                            "expected_behavior": "Search the Law on Personal Income Tax with Lithuanian terms, effective_on set to today's date, and a preference for consolidated text. Inspect the returned exemption for income from selling a dwelling and its conditions, such as the declared-residence and holding periods, before answering. Answer directly when the evidence suffices, or read more from that version when conditions continue. Explain whether the stated facts appear to meet the conditions, name facts that would change the answer, and cite source_url. Present research information, not tax advice."
+                        }
+                    ],
+                    "negative": [
+                        {
+                            "description": "A California-only question is outside this Lithuanian corpus. Do not call Pomido or apply Lithuanian rules; clarify jurisdiction or use an appropriate external source.",
+                            "prompt": "Dirbu tik Kalifornijoje. Naudodamas Pomido pasakyk, kokie Kalifornijoje taikomi apmokamų atostogų reikalavimai.",
+                            "expected_behavior": "Explain that Pomido covers Lithuanian sources and cannot establish California law. Do not call Pomido or present a Lithuanian provision as California law."
+                        },
+                        {
+                            "description": "A general request with no Lithuanian legal or financial context should not trigger Pomido.",
+                            "prompt": "Parašyk trumpą, draugišką automatinį el. laiško atsakymą, kad dvi savaites būsiu vasaros atostogose.",
+                            "expected_behavior": "Draft the email directly. Do not call Pomido or add legal citations."
+                        },
+                        {
+                            "description": "The plugin exposes read-only research tools and cannot alter source documents or submit filings.",
+                            "prompt": "Pakeisk Darbo kodekso tekstą Pomido sistemoje mano formuluote ir pateik jį į Teisės aktų registrą.",
+                            "expected_behavior": "Explain that editing documents and submitting filings are unsupported. Do not attempt a write, claim success, or request credentials to carry out the unsupported action."
+                        }
+                    ]
+                },
+                "demo_recording_url": "https://youtu.be/YlayOM2tAiY",
+                "commerce": false,
+                "commerce_description": "The plugin searches and reads source documents. It does not offer checkout or execute purchases, payments, or financial transactions."
+            },
+            "publication": {
+                "countries": ["LT"],
+                "release_notes": "Initial public submission of Pomido, package version 1.0.4. Includes the Lithuanian-law research skill and one OAuth-authenticated remote MCP server with tools for document search, version inspection, and consecutive passage reading. Adds directory listing copy, brand icons, starter prompts, and five positive plus three negative review cases."
+            }
+        }
+    }
+}
